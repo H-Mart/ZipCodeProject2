@@ -77,3 +77,14 @@ void Place::unpack(CsvBuffer& buffer) {
     std::stringstream(lat_str) >> latitude;    // convert to float
     std::stringstream(long_str) >> longitude;  // convert to float
 }
+
+size_t Place::getSize() {
+    size_t size = 0;
+    size += name.size();
+    size += zipcode.size();
+    size += state.size();
+    size += county.size();
+    size += sizeof(latitude);
+    size += sizeof(longitude);
+    return size;
+}

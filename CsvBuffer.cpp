@@ -3,40 +3,31 @@
 #include <iostream>
 #include <regex>
 
-CsvBuffer::CsvBuffer(const size_t size, const char delim) : maxSize(size), delim(delim) {
-    buffer.resize(size);
-    curr = 0;
-    head = 0;
-    recordCount = 0;
-}
+CsvBuffer::CsvBuffer(const char delim) : delim(delim){};
 
 void CsvBuffer::init(std::istream& instream) {
     read(instream);
     readHeader();
 }
 
-bool CsvBuffer::hasRecords() { return recordCount > 0; }
-
 void CsvBuffer::read(std::istream& instream) {
     char c;
     bool inQuotes = false;
-    // num of chars to read from the file
-    long toRead = getAvailSpace();
 
-    while (!instream.eof() && (toRead-- > 0)) {
+    curr = 0;
+    buffer.clear();
+
+    while (!instream.eof()) {
         instream.get(c);
-        // check for new line here
-        if (c == '\n') {
-            // skipping any newline characters at the end of the file
-            if (instream.peek() != '\n' && !inQuotes) {
-                recordCount++;
-            }
+
+        if (c == '\n' && !inQuotes) {
+            buffer.push_back(c);
+            break;
         } else if (c == '"') {
             inQuotes = !inQuotes;
         }
-        buffer[head] = c;
-        // if we are past the end of the buffer, wrap back to the start
-        head = (head + 1) % maxSize;
+        
+        buffer.push_back(c);
     }
 }
 
@@ -56,7 +47,6 @@ bool CsvBuffer::unpack(std::string& str) {
                     fieldHasMore = false;
                     recordHasMore = false;
                     fieldNum = 0;
-                    recordCount--;
                 } else if (c == '"') {
                     state = CSVState::QuotedField;
                 } else {
@@ -82,27 +72,9 @@ bool CsvBuffer::unpack(std::string& str) {
                 }
                 break;
         }
-        curr = (curr + 1) % maxSize;
+        curr++;
     }
     return recordHasMore;
-}
-
-size_t CsvBuffer::getAvailSpace() {
-    size_t space = 0;
-    if (head > curr) {
-        // free space wraps around end of buffer, i.e. not contiguous
-        space = maxSize - head;
-        if (curr > 0) {
-            space += (curr - 1);
-        }
-    } else if (head < curr) {
-        // free space is nicely contiguous, but doesn't start at the beginning of the buffer
-        space = curr - head;
-    } else {
-        // free space is contiguous and starts at the beginning of the buffer
-        space += (curr - 1) % maxSize;
-    }
-    return space;
 }
 
 std::pair<HeaderField, std::string> CsvBuffer::getCurFieldHeader() {

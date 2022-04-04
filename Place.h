@@ -79,6 +79,8 @@ class Place {
      */
     void operator=(const Place& loc);
 
+    size_t getSize();
+
    private:
     std::string zipcode;
     std::string name;
