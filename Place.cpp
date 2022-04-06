@@ -49,7 +49,7 @@ void Place::unpack(CsvBuffer& buffer) {
     bool moreFields = true;
     while (moreFields) {
         auto curField = buffer.getCurFieldHeader();
-        switch (curField.first) {
+        switch (HeaderField(curField.first)) {
             case HeaderField::ZipCode:
                 moreFields = buffer.unpack(zipcode);
                 break;
@@ -76,6 +76,42 @@ void Place::unpack(CsvBuffer& buffer) {
 
     std::stringstream(lat_str) >> latitude;    // convert to float
     std::stringstream(long_str) >> longitude;  // convert to float
+}
+
+void Place::unpack(LengthIndicatedBuffer& buffer) {}
+
+void Place::pack(LengthIndicatedBuffer& buffer) {
+    buffer.clear();
+    std::stringstream lat_strStream;
+    std::stringstream long_strStream;
+
+    lat_strStream << latitude;
+    long_strStream << longitude;
+
+    for (auto f : buffer.header.fields) {
+        switch (HeaderField(f.fieldType)) {
+            case HeaderField::ZipCode:
+                buffer.pack(zipcode);
+                break;
+            case HeaderField::PlaceName:
+                buffer.pack(name);
+                break;
+            case HeaderField::State:
+                buffer.pack(state);
+                break;
+            case HeaderField::County:
+                buffer.pack(county);
+                break;
+            case HeaderField::Latitude:
+                buffer.pack(lat_strStream.str());
+                break;
+            case HeaderField::Longitude:
+                buffer.pack(long_strStream.str());
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 size_t Place::getSize() {

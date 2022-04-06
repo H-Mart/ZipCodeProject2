@@ -7,6 +7,7 @@ puts the data from CSV file into the buffer and reads the data from CSV file. */
 #include <string>
 
 #include "CsvBuffer.h"
+#include "LengthIndicatedBuffer.h"
 
 class Place {
    public:
@@ -71,6 +72,19 @@ class Place {
      * @post the member variables have been set to the values mentioned above, if the column with that name was found
      */
     void unpack(CsvBuffer& buffer);
+    
+    /**
+     * @brief Reads a record from the buffer and unpacks the fields into the class members
+     *
+     * @param[in, out] buffer The buffer to be read from
+     *
+     * @pre buffer has a record that contains zipcode, place name, state id, county, latitude, and longitude fields
+     *
+     * @post the member variables have been set to the values mentioned above, if the column with that name was found
+     */
+    void unpack(LengthIndicatedBuffer& buffer);
+
+    void pack(LengthIndicatedBuffer& buffer);
 
     /**
      * @brief Assignment operator overload
@@ -89,4 +103,5 @@ class Place {
     double latitude;
     double longitude;
 };
+
 #endif

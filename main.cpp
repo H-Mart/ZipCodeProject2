@@ -4,7 +4,33 @@
 #include <iomanip> 
 
 #include "CsvBuffer.h"
-#include "extremaTable.h"
+#include "HeaderBuffer.h"
+#include "LengthIndicatedBuffer.h"
+#include "Place.h"
+
+Header writeHeader(std::ostream& outstream) {
+    FieldInfo f1 = {"Zip\nCode", (int)HeaderField::ZipCode};
+    FieldInfo f2 = {"Place\nName", (int)HeaderField::PlaceName};
+    FieldInfo f3 = {"State", (int)HeaderField::State};
+    FieldInfo f4 = {"County", (int)HeaderField::County};
+    FieldInfo f5 = {"Lat", (int)HeaderField::Latitude};
+    FieldInfo f6 = {"Long", (int)HeaderField::Longitude};
+    std::vector<FieldInfo> fields = {f1, f2, f3, f4, f5, f6};
+
+    Header header = {
+        {{'Z', 'C', '0', '2'}, 1, 244},
+        {2, (int)LengthIndicatorType::ASCII, 1, 2, 1, "IndexFileNameTemp"},
+        {fields}};
+
+    header.headerInfo.headerSize = sizeof(header.headerInfo) + sizeof(header.fileInfo);
+
+    for (auto f : fields) {
+        header.headerInfo.headerSize += sizeof(f);
+    }
+
+    outstream << header;
+    return header;
+}
 
 /**
  * @brief adding more space between each fields   
@@ -44,7 +70,8 @@ int main(int argc, char const* argv[]) {
         exit(1);
     }
 
-    std::ifstream file(argv[1]);
+    std::ifstream file(argv[1], std::ios::binary);
+    std::ofstream file2(argv[2], std::ios::binary);
 
     if (!file) {
         std::cerr << "Input file cannot be opened. (might not exist)" << std::endl;
@@ -52,94 +79,43 @@ int main(int argc, char const* argv[]) {
     }
 
     CsvBuffer buf;
-
-    ExtremaTable table;
+    LengthIndicatedBuffer lBuf;
 
     buf.init(file);
+    lBuf.header = writeHeader(file2);
+
+    int recCount = 0;
 
     while (!file.eof()) {
         buf.read(file);
         Place p;
         p.unpack(buf);
-        table.update(p);
-        
-        
-        // check if there are three arguments assuming user wants to look for the data by zipcode 
-        if (argc == 3) {
-            for (int i = 0; i < argc; i++) {
-                std::string zipSearch = argv[2]; 
-                std::string z = "-Z"; 
-                std::string line; 
-
-                // find the string "-Z" in the argument argv[2]
-                if (zipSearch.find(z) != std::string::npos) 
-                {  
-                    // remove -Z command character 
-                    const std::string newZip = zipSearch.erase(0,2); 
-
-                    // search for zipcode through the file 
-                    std::cout << "searching for the zip address of: " << zipSearch << std::endl; 
-                    while (std::getline(file, line) && !file.eof())
-                    { 
-                        // substring to compare newZip 
-                        std::string subS = line.substr(0, 5); 
-
-                        int found; 
-                        if ((found = subS.find(newZip)) != line.npos) 
-                        {
-                            // convert string to int 
-                            int zip1 = stoi(subS); 
-                            int zip2 = stoi(newZip); 
-
-                            // check if substring matches string 
-                            if (zip1 == zip2) {
-                                std::cout << "zip found!" << std::endl; 
-                                          
-                                std::cout << std::endl; 
-                                std::cout << std::setfill('-') << std::setw(97) << "-" << std::endl;
-                            
-                               
-                                char c = ','; 
-                                line = addingSpace(line, c);  
-                                 // replace the ',' characters from fields 
-                                replace(line.begin(), line.end(), ',', ' '); 
-                                
-                                // labeled fields
-                                std::cout << "Zip\t\t"
-                                        << "Place Name\t\t"
-                                        << "State\t\t"
-                                        << "County\t\t"
-                                        << "Latitude\t"
-                                        << "Longitude\t"
-                                        << std::endl;
-
-
-                                std::cout << std::setfill('-') << std::setw(97) << "-" << std::endl; 
-                                std::cout << line << std::endl;  
-                                std::cout << std::setfill('-') << std::setw(97) << "-" << std::endl;
-                            
-                            }
-                            else {
-                                // newZip does not match with substring subS
-                                std::cout << "zip not found!" << std::endl; 
-                            }
-                            // close file 
-                            file.close();
-                        }
-                    } 
-                    exit(0);
-                }
-                else {
-                    // command not found or does not include -Z 
-                    std::cerr << "invalid command" << std::endl; 
-                    exit(0); 
-                }
-            }
-        }
+    
+        p.pack(lBuf);
+        lBuf.write(file2);
+        recCount++;
     }
+    lBuf.header.fileInfo.recordCount = recCount;
+    
+    file.close();
+    file2.close();
 
-    // print table
-    std::cout << table;
+    std::ifstream file3(argv[2], std::ios::binary);
+
+    lBuf.init(file3);
+
+    while (!file3.eof()) {
+        lBuf.read(file);
+        Place p;
+        p.unpack(lBuf);
+
+        std::cout << "Zip Code: " << p.getZipCode()
+                  << "\nPlace Name: " << p.getName()
+                  << "\nState: " << p.getState()
+                  << "\nCounty: " << p.getCounty()
+                  << "\nLat: " << p.getLat()
+                  << "\nLong: " << p.getLongi() << std::endl;
+    }
 
     return 0;
 }
