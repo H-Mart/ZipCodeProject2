@@ -33,29 +33,6 @@ Header writeHeader(std::ostream& outstream) {
 }
 
 /**
- * @brief adding more space between each fields   
- *
- * @param str Used to get the string from csv file 
- * @param c The character value to be spaced  
- * @return string 
- * 
- * @pre string of the fields is searched and found through the argv[2]
- * @post returning the string with a proper format 
- */
-std::string addingSpace(std::string str, char c)
-{
-    std::string s1="";
-    for(int i=0;i<str.length();i++) 
-    {
-        if(str[i]!=c) 
-        s1=s1+str[i];
-        else 
-        s1=s1+"\t"+str[i]+ "\t";
-    }
-    return s1;
-}
-
-/**
  * @brief Reads the csv file passed in as a commandline argument and outputs
  *  a formatted table of the northern, southern, eastern, and westernmost zipcodes in a state.
  *
@@ -90,12 +67,12 @@ int main(int argc, char const* argv[]) {
         buf.read(file);
         Place p;
         p.unpack(buf);
-    
         p.pack(lBuf);
         lBuf.write(file2);
         recCount++;
     }
     lBuf.header.fileInfo.recordCount = recCount;
+
     
     file.close();
     file2.close();
