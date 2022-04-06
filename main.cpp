@@ -78,6 +78,7 @@ int main(int argc, char const* argv[]) {
                     const std::string newZip = zipSearch.erase(0,2); 
 
                     // search for zipcode through the file 
+                    // expecting to change for the length indicated files! 
                     std::cout << "searching for the zip address of: " << zipSearch << std::endl; 
                     while (std::getline(file, line) && !file.eof())
                     { 
@@ -101,7 +102,7 @@ int main(int argc, char const* argv[]) {
                                
                                 char c = ','; 
                                 line = addingSpace(line, c);  
-                                 // replace the ',' characters from fields 
+                                 // replace the ',' characters from records 
                                 replace(line.begin(), line.end(), ',', ' '); 
                                 
                                 // labeled fields
@@ -138,6 +139,7 @@ int main(int argc, char const* argv[]) {
         }
     }
 
+    // if less than 3 arguments in command line  
     // print table
     std::cout << table;
 
