@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Header.h"
-// #include "CsvBuffer.h"
 #include "helpers.h"
 
 class LengthIndicatedBuffer {
@@ -23,7 +22,7 @@ class LengthIndicatedBuffer {
     size_t curr;
 
     /// keeps track of how many fields of a record have been processed
-    size_t fieldNum;
+    size_t fieldNum = 0;
     /// number of fields in each record
     size_t numFields;
 
@@ -52,7 +51,7 @@ class LengthIndicatedBuffer {
      *       sets recordCount equal to number of records found while reading
      *
      */
-    void read(std::istream& instream);
+    bool read(std::istream& instream);
 
     /**
      * @brief Reads a field and puts it into a string
@@ -93,8 +92,6 @@ class LengthIndicatedBuffer {
 
     void clear();
 
-    // void writeHeader(std::ostream& outstream);
-
     /**
      * @brief Gets the type and value of the current field.
      *
@@ -104,7 +101,7 @@ class LengthIndicatedBuffer {
      *
      * @return std::pair<HeaderField, std::string>
      */
-    std::pair<HeaderField, std::string> getCurFieldHeader();
+    FieldInfo getCurFieldHeader();
 };
 
 #endif  // CSVBUFFER_H

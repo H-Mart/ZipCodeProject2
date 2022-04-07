@@ -116,3 +116,7 @@ void CsvBuffer::readHeader() {
     }
     numFields = headers.size();
 }
+
+std::vector<std::pair<HeaderField, std::string>> CsvBuffer::getHeaders() const {
+    return headers;
+}

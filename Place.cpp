@@ -1,6 +1,7 @@
 #include "Place.h"
 
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 
 using std::string;
@@ -73,20 +74,52 @@ void Place::unpack(CsvBuffer& buffer) {
                 break;
         }
     }
-
-    std::stringstream(lat_str) >> latitude;    // convert to float
-    std::stringstream(long_str) >> longitude;  // convert to float
+    std::stringstream(lat_str) >> std::setprecision(10) >> latitude;    // convert to float
+    std::stringstream(long_str) >> std::setprecision(10) >> longitude;  // convert to float
 }
 
-void Place::unpack(LengthIndicatedBuffer& buffer) {}
+void Place::unpack(LengthIndicatedBuffer& buffer) {
+    std::string skip;
+    string lat_str, long_str;
+
+    bool hasMore = true;
+    while (hasMore) {
+        auto curField = buffer.getCurFieldHeader();
+        switch (HeaderField(curField.fieldType)) {
+            case HeaderField::ZipCode:
+                hasMore = buffer.unpack(zipcode);
+                break;
+            case HeaderField::PlaceName:
+                hasMore = buffer.unpack(name);
+                break;
+            case HeaderField::State:
+                hasMore = buffer.unpack(state);
+                break;
+            case HeaderField::County:
+                hasMore = buffer.unpack(county);
+                break;
+            case HeaderField::Latitude:
+                hasMore = buffer.unpack(lat_str);
+                break;
+            case HeaderField::Longitude:
+                hasMore = buffer.unpack(long_str);
+                break;
+            default:
+                hasMore = buffer.unpack(skip);
+                break;
+        }
+    }
+    std::stringstream(lat_str) >> std::setprecision(10) >> latitude;    // convert to float
+    std::stringstream(long_str) >> std::setprecision(10) >> longitude;  // convert to float
+}
 
 void Place::pack(LengthIndicatedBuffer& buffer) {
     buffer.clear();
     std::stringstream lat_strStream;
     std::stringstream long_strStream;
 
-    lat_strStream << latitude;
-    long_strStream << longitude;
+    lat_strStream << std::setprecision(10) << latitude;
+    long_strStream << std::setprecision(10) << longitude;
 
     for (auto f : buffer.header.fields) {
         switch (HeaderField(f.fieldType)) {

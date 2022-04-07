@@ -20,14 +20,10 @@ void LengthIndicatedBuffer::init(std::istream& instream) {
 
     hBuf.read(instream);
     header = hBuf.unpack();
-
-    if (header.fileInfo.recordCount > 0) {
-        std::cout << header.fileInfo.recordCount << std::endl;
-        read(instream);
-    }
 }
 
-void LengthIndicatedBuffer::read(std::istream& instream) {
+bool LengthIndicatedBuffer::read(std::istream& instream) {
+    clear();
     // get length of record
     auto lengthIndicatorLength = header.fileInfo.lengthIndicatorSize;
 
@@ -37,32 +33,40 @@ void LengthIndicatedBuffer::read(std::istream& instream) {
         case LengthIndicatorType::BINARY:
             instream.read((char*)&recordLength, lengthIndicatorLength);
             break;
-        case LengthIndicatorType::ASCII:
+        case LengthIndicatorType::ASCII: {
             std::string recordLengthStr;
+            char c;
             for (int i = 0; i < lengthIndicatorLength; i++) {
-                recordLengthStr.push_back(instream.get());
+                instream.get(c);
+                if (c == EOF) {
+                    return false;
+                }
+                recordLengthStr.push_back(c);
             }
-            std::cout << recordLengthStr << std::endl;
-            recordLength = std::stoi(recordLengthStr);
+
+            try {
+                recordLength = std::stoi(recordLengthStr);
+            } catch (std::invalid_argument& err) {
+                if (instream.eof()) {
+                    return false;
+                }
+                throw err;
+            }
+
+            break;
+        }
+        case LengthIndicatorType::BCD:
+            break;
     }
     instream.read(buffer, recordLength);
     this->recordLength = recordLength;
+    return instream.good();
 }
 
 void LengthIndicatedBuffer::writeHeader(std::ostream& outstream) {
-    
+    outstream.seekp(0);
+    outstream << header;
 }
-
-// void LengthIndicatedBuffer::readHeader(std::istream& instream) {
-//     instream >> header.headerInfo;
-//     instream >> header.fileInfo;
-
-//     for (int i = 0; i < header.fileInfo.fieldsPerRecord; i++) {
-//         FieldInfo fInfo;
-//         instream >> fInfo;
-//         header.fields.push_back(fInfo);
-//     }
-// }
 
 bool LengthIndicatedBuffer::unpack(std::string& str) {
     auto state = CSVState::UnquotedField;  // assume field is not quoted by default
@@ -76,7 +80,7 @@ bool LengthIndicatedBuffer::unpack(std::string& str) {
                 if (c == delim) {
                     fieldHasMore = false;
                     fieldNum++;
-                } else if (curr == recordLength) {
+                } else if (curr >= recordLength) {
                     fieldHasMore = false;
                     recordHasMore = false;
                     fieldNum = 0;
@@ -105,7 +109,7 @@ bool LengthIndicatedBuffer::unpack(std::string& str) {
                 }
                 break;
         }
-        curr = (curr + 1) % maxSize;
+        curr++;
     }
     return recordHasMore;
 }
@@ -131,42 +135,21 @@ void LengthIndicatedBuffer::pack(const std::string str) {
 
 void LengthIndicatedBuffer::write(std::ostream& outstream) {
     switch (LengthIndicatorType(header.fileInfo.lengthIndicatorFormat)) {
-        case LengthIndicatorType::ASCII:
+        case LengthIndicatorType::ASCII: {
             std::ostringstream lengthStream;
             lengthStream << std::setfill('0') << std::setw(header.fileInfo.lengthIndicatorSize) << curr;
             auto lengthStr = lengthStream.str();
             outstream.write(lengthStr.c_str(), lengthStream.str().size());
+            break;
+        }
+        case LengthIndicatorType::BCD:
+        case LengthIndicatorType::BINARY:
             break;
     }
 
     outstream.write(buffer, curr);
 }
 
-std::pair<HeaderField, std::string> LengthIndicatedBuffer::getCurFieldHeader() {
-    return headers[fieldNum];
+FieldInfo LengthIndicatedBuffer::getCurFieldHeader() {
+    return header.fields[fieldNum];
 }
-
-// HeaderField getFieldType(std::string headerValue) {
-//     std::regex zipCodePat("Zip\\s*Code");
-//     std::regex placeNamePat("Place\\s*Name");
-//     std::regex statePat("State");
-//     std::regex countyPat("County");
-//     std::regex latitudePat("Lat");
-//     std::regex longitudePat("Long");
-
-//     if (std::regex_search(headerValue, zipCodePat)) {
-//         return HeaderField::ZipCode;
-//     } else if (std::regex_search(headerValue, placeNamePat)) {
-//         return HeaderField::PlaceName;
-//     } else if (std::regex_search(headerValue, statePat)) {
-//         return HeaderField::State;
-//     } else if (std::regex_search(headerValue, countyPat)) {
-//         return HeaderField::County;
-//     } else if (std::regex_search(headerValue, latitudePat)) {
-//         return HeaderField::Latitude;
-//     } else if (std::regex_search(headerValue, longitudePat)) {
-//         return HeaderField::Longitude;
-//     } else {
-//         return HeaderField::Unknown;
-//     }
-// }

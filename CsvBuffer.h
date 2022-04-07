@@ -8,7 +8,7 @@
 #include "helpers.h"
 
 class CsvBuffer {
-   public:
+   private:
     // const size_t maxSize;
     const char delim;
 
@@ -99,6 +99,8 @@ class CsvBuffer {
      * @return std::pair<HeaderField, std::string>
      */
     std::pair<HeaderField, std::string> getCurFieldHeader();
+
+    std::vector<std::pair<HeaderField, std::string>> getHeaders() const;
 };
 
 #endif  // CSVBUFFER_H

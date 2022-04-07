@@ -10,7 +10,7 @@ enum class CSVState {
 };
 
 /// contains the values that will be used to determine which member of the place class the field will be unpacked into
-enum class HeaderField {
+enum class HeaderField : int {
     ZipCode,
     PlaceName,
     State,

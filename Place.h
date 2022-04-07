@@ -83,7 +83,7 @@ class Place {
      * @post the member variables have been set to the values mentioned above, if the column with that name was found
      */
     void unpack(LengthIndicatedBuffer& buffer);
-
+    
     void pack(LengthIndicatedBuffer& buffer);
 
     /**

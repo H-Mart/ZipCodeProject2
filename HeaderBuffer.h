@@ -10,6 +10,7 @@ class HeaderBuffer {
     std::vector<unsigned char> buffer;
    public:
     void read(std::istream& ins);
+    void write(std::ostream& os);
     Header unpack();
 };
 

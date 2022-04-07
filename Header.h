@@ -12,12 +12,13 @@
 //     STRING
 // };
 
-enum class LengthIndicatorType {
+enum class LengthIndicatorType : int {
     ASCII,
     BCD,
     BINARY
 };
 
+// needed to remove automatic alignment of struct members
 #pragma pack(1)
 struct HeaderInfo {
     char magic[4];      // 4 bytes at the start indicating that the file is of the correct type
@@ -96,19 +97,5 @@ struct Header {
         return os;
     }
 };
-
-// Header readHeader(std::istream& instream) {
-//     Header header;
-//     instream >> header.headerInfo;
-//     instream >> header.fileInfo;
-//     for (int i = 0; i < header.fileInfo.fieldsPerRecord; i++) {
-//         FieldInfo fInfo;
-//         instream >> fInfo;
-//         header.fields.push_back(fInfo);
-//     }
-//     return header;
-// };
-
-
 
 #endif // HEADER_H
