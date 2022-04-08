@@ -9,26 +9,60 @@
 
 #include "HeaderBuffer.h"
 
-// const char MAGIC_HEADER_NUMBER[4] = {'Z', 'C', '0', '2'};
+const char MAGIC_HEADER_NUMBER[4] = {'Z', 'C', '0', '2'};
 
 LengthIndicatedBuffer::LengthIndicatedBuffer(const size_t size, const char delim) : maxSize(size), delim(delim) {
     clear();
 }
 
-void LengthIndicatedBuffer::init(std::istream& instream) {
-    HeaderBuffer hBuf;
+std::string LengthIndicatedBuffer::getIndexFileName() {
+    return header.fileInfo.indexFileName;
+}
 
-    hBuf.read(instream);
-    header = hBuf.unpack();
+bool LengthIndicatedBuffer::checkFileType(std::istream& instream) {
+    instream.seekg(0);
+    char first4[4];
+
+    instream.read(first4, sizeof(first4));
+
+    bool good = true;
+    for (int i = 0; i < 4; i++) {
+        good = (first4[i] == MAGIC_HEADER_NUMBER[i]);
+    }
+    return good;
+}
+
+bool LengthIndicatedBuffer::init(std::istream& instream) {
+    if (checkFileType(instream)) {
+        // if file has magic number
+        instream.seekg(0);
+        HeaderBuffer hBuf;
+        hBuf.read(instream);
+        header = hBuf.unpack();
+        initialized = true;
+
+    } else {
+        // if file does not have magic number
+        initialized = false;
+    }
+
+    return initialized;
+}
+
+bool LengthIndicatedBuffer::read(std::istream& instream, int indexOffset) {
+    instream.seekg(indexOffset);
+    return read(instream);
 }
 
 bool LengthIndicatedBuffer::read(std::istream& instream) {
     clear();
-    // get length of record
+
+    // get length of record length indicator
     auto lengthIndicatorLength = header.fileInfo.lengthIndicatorSize;
 
     int recordLength = 0;
 
+    // get actual record length
     switch (LengthIndicatorType(header.fileInfo.lengthIndicatorFormat)) {
         case LengthIndicatorType::BINARY:
             instream.read((char*)&recordLength, lengthIndicatorLength);
@@ -58,6 +92,8 @@ bool LengthIndicatedBuffer::read(std::istream& instream) {
         case LengthIndicatorType::BCD:
             break;
     }
+
+    // read record
     instream.read(buffer, recordLength);
     this->recordLength = recordLength;
     return instream.good();
@@ -119,7 +155,7 @@ void LengthIndicatedBuffer::clear() {
 }
 
 void LengthIndicatedBuffer::pack(const std::string str) {
-    // put delimiters in between each field
+    // put delimiters in between each field skipping the first
     if (curr > 0) {
         buffer[curr++] = delim;
     }
@@ -137,7 +173,7 @@ void LengthIndicatedBuffer::write(std::ostream& outstream) {
     switch (LengthIndicatorType(header.fileInfo.lengthIndicatorFormat)) {
         case LengthIndicatorType::ASCII: {
             std::ostringstream lengthStream;
-            lengthStream << std::setfill('0') << std::setw(header.fileInfo.lengthIndicatorSize) << curr;
+            lengthStream << std::setfill('0') << std::setw(header.fileInfo.lengthIndicatorSize) << (curr);
             auto lengthStr = lengthStream.str();
             outstream.write(lengthStr.c_str(), lengthStream.str().size());
             break;

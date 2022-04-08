@@ -20,4 +20,10 @@ enum class HeaderField : int {
     Unknown
 };
 
+enum class LengthIndicatorType : int {
+    ASCII,
+    BCD,
+    BINARY
+};
+
 #endif

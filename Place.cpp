@@ -147,6 +147,11 @@ void Place::pack(LengthIndicatedBuffer& buffer) {
     }
 }
 
+void Place::print() {
+    std::cout << getZipCode() << " " << getName() << " " << getState() << " "
+              << getCounty() << " " << getLat() << " " << getLongi() << " " << std::endl;
+}
+
 size_t Place::getSize() {
     size_t size = 0;
     size += name.size();

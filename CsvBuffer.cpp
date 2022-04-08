@@ -1,8 +1,9 @@
 #include "CsvBuffer.h"
-#include "helpers.h"
 
 #include <iostream>
 #include <regex>
+
+#include "helpers.h"
 
 CsvBuffer::CsvBuffer(const char delim) : delim(delim){};
 
@@ -11,25 +12,32 @@ void CsvBuffer::init(std::istream& instream) {
     readHeader();
 }
 
-void CsvBuffer::read(std::istream& instream) {
+bool CsvBuffer::read(std::istream& instream) {
     char c;
     bool inQuotes = false;
+    bool endOfFile = false;
 
     curr = 0;
     buffer.clear();
 
     while (!instream.eof()) {
-        instream.get(c);
+        endOfFile = instream.get(c).eof();  // will be set to true if we try to read beyond the end of the file
 
-        if (c == '\n' && !inQuotes) {
+        if (c == '\r' && instream.peek() == '\n' && !inQuotes) {
+            // excel adds \r\n (0D 0A) to end of line when exporting from xlsx to csv
+            // so we skip the carriage return if it is in said sequence since I don't like it
+            continue; 
+        } else if (c == '\n' && !inQuotes) {
             buffer.push_back(c);
             break;
         } else if (c == '"') {
             inQuotes = !inQuotes;
         }
-        
+
         buffer.push_back(c);
     }
+
+    return !endOfFile;
 }
 
 bool CsvBuffer::unpack(std::string& str) {

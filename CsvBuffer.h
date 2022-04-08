@@ -58,7 +58,7 @@ class CsvBuffer {
      *
      *
      */
-    void read(std::istream& instream);
+    bool read(std::istream& instream);
 
     /**
      * @brief Reads a field and puts it into a string

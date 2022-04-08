@@ -6,23 +6,12 @@
 #include <string>
 #include <vector>
 
-// enum FieldType {
-//     INT,
-//     FLOAT,
-//     STRING
-// };
-
-enum class LengthIndicatorType : int {
-    ASCII,
-    BCD,
-    BINARY
-};
 
 // needed to remove automatic alignment of struct members
 #pragma pack(1)
 struct HeaderInfo {
-    char magic[4];      // 4 bytes at the start indicating that the file is of the correct type
-    int version;        // version number
+    char magic[4];   // 4 bytes at the start indicating that the file is of the correct type
+    int version;     // version number
     int headerSize;  // size of header in bytes, including header info
 
     friend std::istream& operator>>(std::istream& ins, HeaderInfo& headerInfo) {
@@ -42,11 +31,10 @@ struct FileInfo {
     int lengthIndicatorSize;    // number of bytes in length indicator
     int lengthIndicatorFormat;  // ASCII, BINARY, or BCD
 
-    int recordCount;         // number of records in file
     int fieldsPerRecord;     // number of fields in each record
     int primaryKeyPosition;  // the ordinal position of the primary key used to index the file
 
-    char indexFileName[100]; // the name of the index file to be loaded at program start
+    char indexFileName[100];  // the name of the index file to be loaded at program start
 
     friend std::istream& operator>>(std::istream& ins, FileInfo& fileInfo) {
         ins.read((char*)(&fileInfo), sizeof(fileInfo));
@@ -57,7 +45,6 @@ struct FileInfo {
         os.write(reinterpret_cast<char*>(&fileInfo.lengthIndicatorSize), sizeof(fileInfo.lengthIndicatorSize));
         os.write(reinterpret_cast<char*>(&fileInfo.lengthIndicatorFormat), sizeof(fileInfo.lengthIndicatorFormat));
 
-        os.write(reinterpret_cast<char*>(&fileInfo.recordCount), sizeof(fileInfo.recordCount));
         os.write(reinterpret_cast<char*>(&fileInfo.fieldsPerRecord), sizeof(fileInfo.fieldsPerRecord));
         os.write(reinterpret_cast<char*>(&fileInfo.primaryKeyPosition), sizeof(fileInfo.primaryKeyPosition));
 
@@ -98,4 +85,4 @@ struct Header {
     }
 };
 
-#endif // HEADER_H
+#endif  // HEADER_H

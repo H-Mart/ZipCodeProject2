@@ -95,6 +95,8 @@ class Place {
 
     size_t getSize();
 
+    void print();
+
    private:
     std::string zipcode;
     std::string name;

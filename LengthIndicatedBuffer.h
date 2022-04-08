@@ -13,13 +13,14 @@ class LengthIndicatedBuffer {
     const size_t maxSize;
     const char delim;
     int recordLength;
+    bool initialized = false;
 
     Header header;
 
     char buffer[1000];
 
     /// holds the position of the start of unprocessed fields
-    size_t curr;
+    int curr;
 
     /// keeps track of how many fields of a record have been processed
     size_t fieldNum = 0;
@@ -53,6 +54,8 @@ class LengthIndicatedBuffer {
      */
     bool read(std::istream& instream);
 
+    bool read(std::istream& instream, int indexOffset);
+
     /**
      * @brief Reads a field and puts it into a string
      *
@@ -84,13 +87,17 @@ class LengthIndicatedBuffer {
      *       head points to the end of the buffer or the amount of data read from the stream, whichever is smaller.\n
      *       fieldNum is increased by one if the record contains more fields or is set to zero if the entire record has been read.
      */
-    void init(std::istream& instream);
+    bool init(std::istream& instream);
 
     void writeHeader(std::ostream& outstream);
 
     void readHeader(std::istream& instream);
 
     void clear();
+
+    bool checkFileType(std::istream& instream);
+
+    std::string getIndexFileName();
 
     /**
      * @brief Gets the type and value of the current field.

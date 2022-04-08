@@ -4,13 +4,13 @@
 // #include <string>
 
 void HeaderBuffer::read(std::istream& ins) {
-    ins.seekg(std::ios::beg);
+    ins.seekg(0);
 
     HeaderInfo hInfo;
     ins >> hInfo;
 
     buffer.resize(hInfo.headerSize);
-    ins.seekg(std::ios::beg);
+    ins.seekg(0);
 
     char c;
     for (int i = 0; i < hInfo.headerSize; i++) {
@@ -18,6 +18,7 @@ void HeaderBuffer::read(std::istream& ins) {
         buffer[i] = c;
     }
 }
+
 Header HeaderBuffer::unpack() {
     Header header;
     std::vector<FieldInfo> fields;
