@@ -15,6 +15,7 @@ class PrimaryKey {
     void GenerateIndexFile(std::string fileName);
     bool ReadIndexFile(std::string fileName);
     void Add(KeyStruct keyStruct);
+    int BinarySearch(std::string str);
     int Find(std::string key);
 
    private:
