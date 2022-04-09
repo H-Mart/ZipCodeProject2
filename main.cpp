@@ -75,7 +75,7 @@ void convertFileType(std::istream& csvFile, std::ostream& lirfFile, std::string 
         memset(field.fieldName, 0, sizeof(field.fieldName));
         name.copy(field.fieldName, sizeof(field.fieldName));
 
-        field.fieldType = (int)type;
+        field.fieldType = type;
         fields.push_back(field);
     }
 
@@ -87,7 +87,7 @@ void convertFileType(std::istream& csvFile, std::ostream& lirfFile, std::string 
         },
         {
             2,                                // length indicator length
-            (int)LengthIndicatorType::ASCII,  // length indicator type
+            LengthIndicatorType::ASCII,  // length indicator type
             (int)csvHeaders.size(),           // number of fields
             0,                                // primary key position
             ""                                // name of the index file (will be set later)
@@ -123,12 +123,12 @@ void generateIndex(PrimaryKey& pKey, std::string indexFileName, std::string data
     lBuf.init(file);
 
     std::cout << "lBuf.buffer" << std::endl;
-    auto pos = file.tellg();
+    auto pos = (unsigned int)file.tellg();
     while (lBuf.read(file)) {
         Place place;
         place.unpack(lBuf);
         pKey.Add({place.getZipCode(), pos});
-        pos = file.tellg();
+        pos = (unsigned int)file.tellg();
     }
     pKey.GenerateIndexFile(indexFileName);
 }
@@ -177,7 +177,6 @@ void printFoundZips(std::vector<Place>& places) {
     size_t lat_w = 12;
     size_t long_w = 12;
 
-
     for (auto p : places) {
         if (p.getZipCode().size() > zip_w) {
             zip_w = p.getZipCode().size() + 5;
@@ -189,7 +188,7 @@ void printFoundZips(std::vector<Place>& places) {
             state_w = p.getState().size() + 5;
         }
         if (p.getCounty().size() > county_w) {
-            county_w = p.getCounty().size() + 8;
+            county_w = p.getCounty().size() + 6;
         }
     }
 
@@ -283,12 +282,16 @@ int main(int argc, char const* argv[]) {
 
         int offset;
         std::vector<Place> foundPlaces;
+        std::vector<Place> notFoundPlaces;
         for (auto zip : zipList) {
             if ((offset = pKey.Find(zip)) != pKey.notFound) {
                 lBuf.read(lirfFile, offset);
                 Place p;
                 p.unpack(lBuf);
                 foundPlaces.push_back(p);
+            } else {
+                // Place p = {zip, "", "", "", 0, 0};
+                // foundPlaces.push_back(p);
             }
         }
 

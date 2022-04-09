@@ -3,7 +3,7 @@
 #include <iostream>
 #include <regex>
 
-#include "helpers.h"
+#include "enums.h"
 
 CsvBuffer::CsvBuffer(const char delim) : delim(delim){};
 
@@ -13,13 +13,13 @@ void CsvBuffer::init(std::istream& instream) {
 }
 
 bool CsvBuffer::read(std::istream& instream) {
-    char c;
     bool inQuotes = false;
     bool endOfFile = false;
 
     curr = 0;
     buffer.clear();
 
+    char c = 0;
     while (!instream.eof()) {
         endOfFile = instream.get(c).eof();  // will be set to true if we try to read beyond the end of the file
 

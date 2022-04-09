@@ -6,13 +6,17 @@
 #include <string>
 #include <vector>
 
+#include "enums.h"
+
 
 // needed to remove automatic alignment of struct members
-#pragma pack(1)
+// there might be a way around this, but with the code the way
+// it is, the compiler padding will mess with the loading of the file
+#pragma pack(push, 1)
 struct HeaderInfo {
-    char magic[4];   // 4 bytes at the start indicating that the file is of the correct type
-    int version;     // version number
-    int headerSize;  // size of header in bytes, including header info
+    char magic[4];   /// 4 bytes at the start indicating that the file is of the correct type
+    int version;     /// version number
+    int headerSize;  /// size of header in bytes, including header info
 
     friend std::istream& operator>>(std::istream& ins, HeaderInfo& headerInfo) {
         ins.read((char*)(&headerInfo), sizeof(headerInfo));
@@ -28,13 +32,13 @@ struct HeaderInfo {
 };
 
 struct FileInfo {
-    int lengthIndicatorSize;    // number of bytes in length indicator
-    int lengthIndicatorFormat;  // ASCII, BINARY, or BCD
+    int lengthIndicatorSize;    /// number of bytes in length indicator
+    LengthIndicatorType lengthIndicatorFormat;  /// ASCII, BINARY, or BCD
 
-    int fieldsPerRecord;     // number of fields in each record
-    int primaryKeyPosition;  // the ordinal position of the primary key used to index the file
+    int fieldsPerRecord;     /// number of fields in each record
+    int primaryKeyPosition;  /// the ordinal position of the primary key used to index the file
 
-    char indexFileName[100];  // the name of the index file to be loaded at program start
+    char indexFileName[100];  /// the name of the index file to be loaded at program start
 
     friend std::istream& operator>>(std::istream& ins, FileInfo& fileInfo) {
         ins.read((char*)(&fileInfo), sizeof(fileInfo));
@@ -55,8 +59,8 @@ struct FileInfo {
 };
 
 struct FieldInfo {
-    char fieldName[50];
-    int fieldType;
+    char fieldName[50];  /// the name of the field
+    HeaderField fieldType;  /// the HeaderField type of the field
 
     friend std::istream& operator>>(std::istream& ins, FieldInfo& fieldInfo) {
         ins.read((char*)(&fieldInfo), sizeof(fieldInfo));
@@ -84,5 +88,7 @@ struct Header {
         return os;
     }
 };
+
+#pragma pack(pop)
 
 #endif  // HEADER_H

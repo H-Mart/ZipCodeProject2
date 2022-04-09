@@ -93,8 +93,13 @@ class Place {
      */
     void operator=(const Place& loc);
 
+    /**
+     * @brief get size of object in bytes
+     * 
+     * @return size_t size of object
+     */
     size_t getSize();
-
+    
     void print();
 
    private:

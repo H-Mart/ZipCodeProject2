@@ -1,21 +1,20 @@
 #ifndef LIBUFFER_H
 #define LIBUFFER_H
 
+#include <array>
 #include <istream>
 #include <string>
 #include <vector>
 
 #include "Header.h"
-#include "helpers.h"
+#include "enums.h"
 
 class LengthIndicatedBuffer {
-   public:
-    const size_t maxSize;
+   private:
     const char delim;
     int recordLength;
     bool initialized = false;
 
-    Header header;
 
     char buffer[1000];
 
@@ -27,76 +26,146 @@ class LengthIndicatedBuffer {
     /// number of fields in each record
     size_t numFields;
 
-    // first part holds the header type for use when unpacking,
-    // second part holds the actual header value
-    std::vector<std::pair<HeaderField, std::string>> headers;
 
    public:
-    /**
-     * @brief Construct a new Csv Buffer object
-     *
-     * @param size The max size of the buffer
-     * @param delim The delimiter used in the csv file
-     *
-     * @pre size > 0
-     */
-    LengthIndicatedBuffer(const size_t size = 4096, const char delim = ',');
+    Header header;
+
 
     /**
-     * @brief Reads into the buffer getAvailSpace amount of data or to the end of the stream, whichever is smaller.
+     * @brief Construct a new LengthIndicatedBuffer object
      *
-     * @param[in] instream amount returned by getAvailSpace will be read from instream
+     * @param delim The delimiter used between the record fields
      *
-     * @pre instream is an open stream that contains data in a CSV format
-     * @post buffer contains data to be unpacked from curr to head\n
-     *       sets recordCount equal to number of records found while reading
+     */
+    LengthIndicatedBuffer(const char delim = ',');
+
+    /**
+     * @brief Read a single length indicated record into the buffer
      *
+     * @param[in] instream the stream that points to the record
+     *
+     * @pre instream is an open stream pointing to the start of a length indicated record
+     * @pre record size < sizeof(buffer)
+     * @post instream is positioned at the start of the next record or the end of the stream
+     * @post curr is set to 0 and buffer is zeroed
+     *
+     * @retval true when instream.good() is true (indicating that we can read another record)
+     * @retval false when instream.good() is false (indicating that we are probably at the end of the file)
      */
     bool read(std::istream& instream);
 
+    /**
+     * @brief Seek to the specified offset in the file and read a single length indicated record into the buffer
+     *
+     * @param[in] instream the stream that points to the record
+     * @param[in] indexOffset the number of bytes from the start of the file to seek to before reading
+     *
+     * @pre instream is an open stream pointing to the start of a length indicated record
+     * @pre indexOffset is the number of bytes from the start of the file to the start of a valid length indicated record
+     *
+     * @post instream is positioned at the start of the next record or the end of the stream
+     *
+     * @retval true when instream.good() is true (indicating that we can read another record)
+     * @retval false when instream.good() is false (indicating that we are probably at the end of the file)
+     */
     bool read(std::istream& instream, int indexOffset);
 
     /**
      * @brief Reads a field and puts it into a string
      *
      * @param[out] str the string that will hold the value of the field
-     * @return true record has not had every field unpacked
-     * @return false record has no more fields to unpack
      *
      * @pre curr is pointing to the start of a field
      *      str is an empty std::string
      *
      * @post str contains the value of the field
-     *       curr is pointing to the start of the next field or the next record
+     * @post curr is pointing to the start of the next field or the next record
+     * @post fieldNum is pointing to the type of the next field
      *
+     * @retval true record has not had every field unpacked
+     * @retval false record has no more fields to unpack
      */
     bool unpack(std::string& str);
 
+    /**
+     * @brief Packs a field into the buffer
+     *
+     * @param[in] str the string that will holds the value of the field
+     *
+     * @pre str is of the correct type indicated by headers[fieldNum].fieldType
+     *
+     * @post if the field is not the first, buffer has had a comma and the data from str minus the null terminator added
+     * @post if the field is first, buffer has had the data from str minus the null terminator added
+     * @post curr points to the first position in buffer after the newly added field
+     *
+     */
     void pack(const std::string str);
+
+    /**
+     * @brief Writes length of the field and the data in the buffer to the stream
+     *
+     * @param[in] str the string that will holds the value of the field
+     *
+     * @pre str is of the correct type indicated by headers[fieldNum].fieldType
+     *
+     * @post 
+     *
+     */
     void write(std::ostream& outstream);
 
     /**
-     * @brief Performs the first read and extracts the headers.
+     * @brief read and extract the header. 
      *
      * @param[in] instream stream to be read from
      *
-     * @pre buffer is empty
-     * @post headers contains the values returned by readHeader\n
-     *       buffer contains raw data\n
-     *       curr points to the start of the buffer.\n
-     *       head points to the end of the buffer or the amount of data read from the stream, whichever is smaller.\n
-     *       fieldNum is increased by one if the record contains more fields or is set to zero if the entire record has been read.
+     * @pre instream points to a valid length indicated file opened for reading
+     * @post header has been loaded with the values from the stream
+     * @post initialized has been set to true if header read was successful, false if it was not       
+     *       
+     * @retval true header read was successful
+     * @retval false header read was not successful
+     *       
      */
     bool init(std::istream& instream);
 
+    /**
+     * @brief Seeks to the start of the stream and writes the header member to the stream
+     * 
+     * @post outstream is pointing to the first byte after the header
+     * 
+     * @param[out] outstream the stream to be written to
+     */
     void writeHeader(std::ostream& outstream);
 
-    void readHeader(std::istream& instream);
-
+    /**
+     * @brief Sets curr to start of buffer
+     * 
+     * @post curr = 0
+     * 
+     */
     void clear();
 
+    /**
+     * @brief read the first 4 bytes of the file and check against the magic number. 
+     *
+     * @param[in] instream stream to be read from
+     *
+     * @pre instream is open for reading
+     *       
+     * @retval true if file has correct magic number
+     * @retval false if file does not have correct magic number
+     *       
+     */
     bool checkFileType(std::istream& instream);
 
+    /**
+     * @brief get the name of the index file from the header
+     *
+     * @pre initialized = true
+     *       
+     * @return string containing index file name
+     *       
+     */
     std::string getIndexFileName();
 
     /**
@@ -104,9 +173,9 @@ class LengthIndicatedBuffer {
      *
      * @pre headers has been initialized
      *
-     * @post returns a pair containing the HeaderField type and the string value of the current field's header
+     * @post returns a FieldInfo struct with the field name and field type
      *
-     * @return std::pair<HeaderField, std::string>
+     * @return FieldInfo
      */
     FieldInfo getCurFieldHeader();
 };

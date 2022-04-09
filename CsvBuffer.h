@@ -5,11 +5,10 @@
 #include <string>
 #include <vector>
 
-#include "helpers.h"
+#include "enums.h"
 
 class CsvBuffer {
    private:
-    // const size_t maxSize;
     const char delim;
 
     std::string buffer;
