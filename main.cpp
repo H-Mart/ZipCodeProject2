@@ -31,7 +31,7 @@ std::string addingSpace(std::string str, char c) {
     return s1;
 }
 
-void transferRecords(std::istream& csvFile, std::iostream& lirfFile) {  //, CsvBuffer& buf, LengthIndicatedBuffer& lBuf) {
+void transferRecords(std::istream& csvFile, std::iostream& lirfFile) {
     LengthIndicatedBuffer lBuf;
     CsvBuffer cBuf;
 
@@ -55,13 +55,13 @@ void transferRecords(std::istream& csvFile, std::iostream& lirfFile) {  //, CsvB
     }
 }
 
-void convertFileType(std::istream& csvFile, std::ostream& lirfFile, std::string csvFileName) {
+void convertFileType(std::istream& csvFile, std::ostream& lirfFile, std::string lirfFileName) {
     CsvBuffer csvBuf;
     csvBuf.init(csvFile);
 
     auto csvHeaders = csvBuf.getHeaders();
 
-    std::string indexFileName = csvFileName.substr(0, 96) + ".idx";
+    std::string indexFileName = lirfFileName.substr(0, 96) + ".idx";
 
     std::vector<FieldInfo> fields;
 
@@ -86,11 +86,11 @@ void convertFileType(std::istream& csvFile, std::ostream& lirfFile, std::string 
             0                      // length of header (will be set later)
         },
         {
-            2,                                // length indicator length
+            2,                           // length indicator length
             LengthIndicatorType::ASCII,  // length indicator type
-            (int)csvHeaders.size(),           // number of fields
-            0,                                // primary key position
-            ""                                // name of the index file (will be set later)
+            (int)csvHeaders.size(),      // number of fields
+            0,                           // primary key position
+            ""                           // name of the index file (will be set later)
         },
         {}};
 
@@ -110,10 +110,6 @@ void convertFileType(std::istream& csvFile, std::ostream& lirfFile, std::string 
     indexFileName.copy(header.fileInfo.indexFileName, 100);
 
     lirfFile << header;
-}
-
-void loadIndex(PrimaryKey& pKey, std::string indexFileName) {
-    pKey.ReadIndexFile(indexFileName);
 }
 
 void generateIndex(PrimaryKey& pKey, std::string indexFileName, std::string dataFileName) {
@@ -169,7 +165,7 @@ void parseArgs(int argc, char const* argv[], std::vector<std::string>& zipList, 
     }
 }
 
-void printFoundZips(std::vector<Place>& places) {
+void printFoundZips(std::vector<Place>& found) {
     size_t zip_w = 0;
     size_t name_w = 0;
     size_t state_w = 0;
@@ -177,18 +173,19 @@ void printFoundZips(std::vector<Place>& places) {
     size_t lat_w = 12;
     size_t long_w = 12;
 
-    for (auto p : places) {
-        if (p.getZipCode().size() > zip_w) {
-            zip_w = p.getZipCode().size() + 5;
+    // calculate widths so that the width of each column is slightly larger than the maximum length field
+    for (auto place : found) {
+        if (place.getZipCode().size() > zip_w) {
+            zip_w = place.getZipCode().size() + 5;
         }
-        if (p.getName().size() > name_w) {
-            name_w = p.getName().size() + 5;
+        if (place.getName().size() > name_w) {
+            name_w = place.getName().size() + 5;
         }
-        if (p.getState().size() > state_w) {
-            state_w = p.getState().size() + 5;
+        if (place.getState().size() > state_w) {
+            state_w = place.getState().size() + 5;
         }
-        if (p.getCounty().size() > county_w) {
-            county_w = p.getCounty().size() + 6;
+        if (place.getCounty().size() > county_w) {
+            county_w = place.getCounty().size() + 6;
         }
     }
 
@@ -206,8 +203,10 @@ void printFoundZips(std::vector<Place>& places) {
               << std::endl;
 
     std::cout << std::setfill('-') << std::setw(total) << "-" << std::endl;
-    for (auto place : places) {
-        std::cout << std::setfill(' ') << std::setw(zip_w) << std::left
+    // print the zipcodes that were found
+    for (auto place : found) {
+        std::cout << std::setprecision(10)
+                  << std::setfill(' ') << std::setw(zip_w) << std::left
                   << place.getZipCode() << std::setw(name_w)
                   << place.getName() << std::setw(state_w)
                   << place.getState() << std::setw(county_w)
@@ -216,15 +215,26 @@ void printFoundZips(std::vector<Place>& places) {
                   << place.getLongi()
                   << std::endl;
     }
+
     std::cout << std::setfill('-') << std::setw(total) << "-" << std::endl;
 }
 
+void printNotFoundZips(std::vector<std::string>& notFound) {
+    std::cout << "\n\nThe following zip codes did not match any records in the file:" << std::endl;
+    for (auto zip : notFound) {
+        std::cout << std::setprecision(10)
+                  << std::setfill(' ') << std::setw(5) << std::left
+                  << zip << std::endl;
+    }
+}
+
 /**
- * @brief Reads the csv file passed in as a commandline argument and outputs
- *  a formatted table of the northern, southern, eastern, and westernmost zipcodes in a state.
+ * @brief Uses the command line arguments to either convert a csv file into a length indicated record file or
+ *        search the length indicated record file for records with given zipcodes
  *
- * @param argc Used to check if there is an input file
- * @param argv Contains the input file if given
+ *
+ * @param argc number of command line arguments
+ * @param argv Contains the commandline arguments
  * @return int
  */
 int main(int argc, char const* argv[]) {
@@ -252,7 +262,7 @@ int main(int argc, char const* argv[]) {
         std::ifstream csvFile(csvFileName, std::ios::binary | std::ios::in | std::ios::out);
         std::fstream lirfFile(lirfFileName, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
 
-        convertFileType(csvFile, lirfFile, csvFileName);
+        convertFileType(csvFile, lirfFile, lirfFileName);
         transferRecords(csvFile, lirfFile);
 
         csvFile.close();
@@ -275,30 +285,32 @@ int main(int argc, char const* argv[]) {
         auto indexFileName = lBuf.getIndexFileName();
 
         if (std::filesystem::exists(indexFileName)) {
-            loadIndex(pKey, indexFileName);
+            pKey.ReadIndexFile(indexFileName);
         } else {
             generateIndex(pKey, indexFileName, lirfFileName);
         }
 
         int offset;
         std::vector<Place> foundPlaces;
-        std::vector<Place> notFoundPlaces;
+        std::vector<std::string> notFoundPlaces;
         for (auto zip : zipList) {
-            if ((offset = pKey.Find(zip)) != pKey.notFound) {
+            if ((offset = pKey.BinarySearch(zip)) != pKey.notFound) {
                 lBuf.read(lirfFile, offset);
                 Place p;
                 p.unpack(lBuf);
                 foundPlaces.push_back(p);
             } else {
-                // Place p = {zip, "", "", "", 0, 0};
-                // foundPlaces.push_back(p);
+                notFoundPlaces.push_back(zip);
             }
         }
 
         if (foundPlaces.size() > 0) {
             printFoundZips(foundPlaces);
+            if (notFoundPlaces.size() > 0) {
+                printNotFoundZips(notFoundPlaces);
+            }
         } else {
-            std::cout << "Zip Codes not found :(" << std::endl;
+            std::cout << "No Zip Codes found" << std::endl;
         }
 
         return 0;
@@ -318,11 +330,10 @@ int main(int argc, char const* argv[]) {
         auto indexFileName = lBuf.getIndexFileName();
 
         if (std::filesystem::exists(indexFileName)) {
-            loadIndex(pKey, indexFileName);
+            pKey.ReadIndexFile(indexFileName);
         } else {
             generateIndex(pKey, indexFileName, lirfFileName);
         }
+        return 0;
     }
-
-    return 0;
 }

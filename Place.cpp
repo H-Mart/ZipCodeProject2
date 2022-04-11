@@ -109,6 +109,7 @@ void Place::unpack(LengthIndicatedBuffer& buffer) {
                 break;
         }
     }
+
     std::stringstream(lat_str) >> std::setprecision(10) >> latitude;    // convert to float
     std::stringstream(long_str) >> std::setprecision(10) >> longitude;  // convert to float
 }
