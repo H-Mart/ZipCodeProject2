@@ -145,7 +145,7 @@ std::vector<std::string> parseZipArg(std::string zipList) {
     return zips;
 }
 
-void parseArgs(int argc, char const* argv[], std::vector<std::string>& zipList, std::string& csvFileName, std::string& lirfFileName) {
+bool parseArgs(int argc, char const* argv[], std::vector<std::string>& zipList, std::string& csvFileName, std::string& lirfFileName) {
     const std::string zipFlag = "-Z";
     const std::string csvFlag = "-C";
 
@@ -163,6 +163,8 @@ void parseArgs(int argc, char const* argv[], std::vector<std::string>& zipList, 
             }
         }
     }
+
+    return true;
 }
 
 void printFoundZips(std::vector<Place>& found) {
@@ -259,6 +261,11 @@ int main(int argc, char const* argv[]) {
     // if we are given a csv file and a lirf file
     // we will convert the csv file to the lirf format
     if (csvFileName.size() && lirfFileName.size()) {
+        if(!std::filesystem::exists(csvFileName)) {
+            std::cerr << "Input CSV file does not exist" << std::endl;
+            return 1;
+        }
+
         std::ifstream csvFile(csvFileName, std::ios::binary | std::ios::in | std::ios::out);
         std::fstream lirfFile(lirfFileName, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
 
