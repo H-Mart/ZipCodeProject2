@@ -9,6 +9,11 @@ bool CompareStr(PrimaryKey::KeyStruct& s1, PrimaryKey::KeyStruct& s2) {
 
 void PrimaryKey::GenerateIndexFile(std::string fileName) {
     std::ofstream ofile(fileName, std::ios::binary);
+    
+	header.version = 1;
+	header.keyCount = vKey.size();
+	header.format = IndexFileFormat::ASCII;
+	ofile << header.version << " " << header.keyCount << " " << header.format << std::endl;
 
     for (size_t i = 0; i < vKey.size(); i++) {
         ofile << vKey[i].key << " " << vKey[i].offset << '\n';
@@ -32,8 +37,16 @@ bool PrimaryKey::ReadIndexFile(std::string fileName) {
     PrimaryKey::KeyStruct prevZip = {"0", 0};  // dummy value for first comparison
 
     isSorted = true;
+    bool initHeader = false;
     while (std::getline(iFile, line)) {
         std::stringstream ss(line);
+        if (!initHeader) {
+			ss >> header.version;
+			ss >> header.keyCount;
+			ss >> header.format;
+			initHeader = true;
+			continue;
+		}
         ss >> str;
         ss >> offset;
         PrimaryKey::KeyStruct currZip = {str, offset};
@@ -81,7 +94,7 @@ int PrimaryKey::BinarySearch(std::string key) {  // Binary search for string typ
         middle = left + ((right - left) / 2);
 
         std::string& k = vKey[middle].key;
-        if (key == k) {
+        if (key == k) { 
             return vKey[middle].offset;
         }
 

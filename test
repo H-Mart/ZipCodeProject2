@@ -1,0 +1,18 @@
+Script started on 2022-04-11 21:04:53-05:00
+]0;henry@henry-server:~/csci331/ZipCodeProject2[henry@henry-server ZipCodeProject2]$ ./ZipCode.out -Z56301,501,99950,3 us_postal_codes.lir 
+
+--------------------------------------------------------------------------------
+Zip       Place Name      State  County                 Latitude    Longitude   
+--------------------------------------------------------------------------------
+56301     Saint Cloud     MN     Stearns                45.541      -94.1819    
+501       Holtsville      NY     Suffolk                40.8154     -73.0451    
+99950     Ketchikan       AK     Ketchikan Gateway      55.3422     -131.6478   
+--------------------------------------------------------------------------------
+
+
+The following zip codes did not match any records in the file:
+3    
+]0;henry@henry-server:~/csci331/ZipCodeProject2[henry@henry-server ZipCodeProject2]$ exit
+exit
+
+Script done on 2022-04-11 21:05:01-05:00

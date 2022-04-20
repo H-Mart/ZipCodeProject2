@@ -1,0 +1,46 @@
+ZipCodeProject2 Instructions
+
+Compiling
+Compile with g++ --std=c++17 -Wall -o ZipCode.out *.cpp -lstdc++fs
+
+(-lstdc++fs links the filesystem library and must be at the end of the call to g++)
+
+Running
+There are two optional arguments that will change the way the program functions.
+
+  -Z<list_of_zip_codes> where list_of_zip_codes is a comma separated list of zip codes to search the file for
+  
+  -C<csv_filename> where csv_filename is the name of a csv file of the type used in this project.
+
+The only required argument is a path to a file. 
+
+If -C is used, the program will try to convert the csv file to the lirf format and write it to the lirf path provided.  
+If -Z is used, the program will load the file from the path provided and search for the zip codes.  
+If both -C and -Z are used, the program will currently act as if only -C was used. (This might change later)
+
+These options can appear in any order after the executable name. 
+
+Examples: 
+
+./ZipCode.out -Z24321,42444 example_file  
+will try to open and read a file called example_file and search for the zip codes 24321 and 42444. Any zip codes that are found
+in the file will have their entire record printed in a table. The zip codes that are not found will be listed after any that were found.
+
+For example, using these two zip codes on the file provided, the output will look like
+----------------------------------------------------------------
+Zip       Place NameState  County       Latitude    Longitude
+----------------------------------------------------------------
+42444     Poole     KY     Webster      37.641      -87.6439
+----------------------------------------------------------------
+
+
+The following zip codes did not match any records in the file:
+24321
+
+
+./ZipCode.out -Cexample_csv_file.csv example_file  
+will try to open and read a file called example_csv_file.csv and will create or overwrite a file called example_file with the data read from the csv file. 
+
+
+./ZipCode.out example_file  
+without either optional argument, the program will simply try to read example_file as a file and do nothing. 

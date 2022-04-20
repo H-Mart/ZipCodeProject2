@@ -7,6 +7,7 @@
 #include "CsvBuffer.h"
 #include "HeaderBuffer.h"
 #include "LengthIndicatedBuffer.h"
+#include "LengthIndicatedFile.h"
 #include "Place.h"
 #include "PrimaryKey.h"
 
@@ -110,23 +111,6 @@ void convertFileType(std::istream& csvFile, std::ostream& lirfFile, std::string 
     indexFileName.copy(header.fileInfo.indexFileName, 100);
 
     lirfFile << header;
-}
-
-void generateIndex(PrimaryKey& pKey, std::string indexFileName, std::string dataFileName) {
-    std::ifstream file(dataFileName, std::ios::binary);
-
-    LengthIndicatedBuffer lBuf;
-    lBuf.init(file);
-
-    std::cout << "lBuf.buffer" << std::endl;
-    auto pos = (unsigned int)file.tellg();
-    while (lBuf.read(file)) {
-        Place place;
-        place.unpack(lBuf);
-        pKey.Add({place.getZipCode(), pos});
-        pos = (unsigned int)file.tellg();
-    }
-    pKey.GenerateIndexFile(indexFileName);
 }
 
 std::vector<std::string> parseZipArg(std::string zipList) {
@@ -261,7 +245,7 @@ int main(int argc, char const* argv[]) {
     // if we are given a csv file and a lirf file
     // we will convert the csv file to the lirf format
     if (csvFileName.size() && lirfFileName.size()) {
-        if(!std::filesystem::exists(csvFileName)) {
+        if (!std::filesystem::exists(csvFileName)) {
             std::cerr << "Input CSV file does not exist" << std::endl;
             return 1;
         }
@@ -279,33 +263,14 @@ int main(int argc, char const* argv[]) {
     }
 
     if (zipList.size() && lirfFileName.size()) {
-        // load index and find zip files
-        std::ifstream lirfFile(lirfFileName, std::ios::binary);
-        LengthIndicatedBuffer lBuf;
+        LengthIndicatedFile lirfFile(lirfFileName);
 
-        if (!lBuf.init(lirfFile)) {
-            std::cerr << "length indexed file could not be loaded" << std::endl;
-            return 1;
-        }
-
-        PrimaryKey pKey;
-        auto indexFileName = lBuf.getIndexFileName();
-
-        if (std::filesystem::exists(indexFileName)) {
-            pKey.ReadIndexFile(indexFileName);
-        } else {
-            generateIndex(pKey, indexFileName, lirfFileName);
-        }
-
-        int offset;
         std::vector<Place> foundPlaces;
         std::vector<std::string> notFoundPlaces;
         for (auto zip : zipList) {
-            if ((offset = pKey.BinarySearch(zip)) != pKey.notFound) {
-                lBuf.read(lirfFile, offset);
-                Place p;
-                p.unpack(lBuf);
-                foundPlaces.push_back(p);
+            auto obj = lirfFile.findRecord(zip);
+            if (obj) {
+                foundPlaces.push_back(*obj);
             } else {
                 notFoundPlaces.push_back(zip);
             }
@@ -325,22 +290,8 @@ int main(int argc, char const* argv[]) {
 
     if (lirfFileName.size()) {
         // check if index exists and generate it if it doesn't
-        std::ifstream lirfFile(lirfFileName, std::ios::binary);
-        LengthIndicatedBuffer lBuf;
-
-        if (!lBuf.init(lirfFile)) {
-            std::cerr << "length indexed file could not be loaded" << std::endl;
-            return 1;
-        }
-
-        PrimaryKey pKey;
-        auto indexFileName = lBuf.getIndexFileName();
-
-        if (std::filesystem::exists(indexFileName)) {
-            pKey.ReadIndexFile(indexFileName);
-        } else {
-            generateIndex(pKey, indexFileName, lirfFileName);
-        }
+        LengthIndicatedFile lirfFile(lirfFileName);
+        
         return 0;
     }
 }
